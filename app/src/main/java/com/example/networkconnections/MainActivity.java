@@ -1,16 +1,23 @@
 package com.example.networkconnections;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
-//import org.apache.commons.io.IOUtils;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,8 +25,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements GetTweetsAsyncData.IDATA {
+    TextView tv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +44,9 @@ public class MainActivity extends AppCompatActivity {
                     reqparams.addParameeters("name", "Pallav")
                             .addParameeters("age", "25")
                             .addParameeters("email","abcd@gmail.com");
-                    new GetAsyncGetParams(reqparams).execute("http://api.theappsdr.com/simple.php");
+                    //new GetAsyncGetParams(reqparams).execute("http://api.theappsdr.com/params.php");
+                    new GetTweetsAsyncData(MainActivity.this).execute("");
+                    new GetImageAsyncData((ImageView)findViewById(R.id.imageView)).execute("https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Android_greenrobot-01_aRFK1TB.max-2800x2800.jpg");
                 }
                 else{
                     Toast.makeText(MainActivity.this, "is not connected", Toast.LENGTH_SHORT).show();
@@ -57,6 +68,68 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void handleListData(final LinkedList<String> data) {
+
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+
+        tv= findViewById(R.id.textView);
+        alertBuilder.setTitle("Tweets");
+        alertBuilder.setItems(data.toArray(new CharSequence[data.size()]), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                tv.setText(data.get(which).toString());
+            }
+        });
+        final AlertDialog alertDialog = alertBuilder.create();
+        alertDialog.show();
+    }
+
+    private class GetImageAsyncData extends AsyncTask<String, Void, Void> {
+
+        ImageView imageView;
+        Bitmap bitmap=null;
+        public GetImageAsyncData(ImageView iv) {
+            imageView=iv;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if(bitmap!=null && imageView!=null)
+            {
+                imageView.setImageBitmap(bitmap);
+            }
+        }
+
+
+        @Override
+        protected Void doInBackground(String... params) {
+            StringBuilder sbuilder = new StringBuilder();
+            HttpURLConnection connection = null;
+            bitmap = null;
+            try {
+                URL url = new URL(params[0]);
+                connection = (HttpURLConnection)url.openConnection();
+                connection.connect();
+                if(connection.getResponseCode() == HttpURLConnection.HTTP_OK){
+                    bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                }
+
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }finally {
+                if(connection!=null)
+                {
+                    connection.disconnect();
+                }
+            }
+            return null;
+        }
     }
 
     private class GetAsyncData extends AsyncTask<String, Void, String> {
@@ -137,21 +210,15 @@ public class MainActivity extends AppCompatActivity {
             StringBuilder sbuilder = new StringBuilder();
             HttpURLConnection connection = null;
             BufferedReader breader = null;
-            String result = null;
+            String result = "";
             try {
                 URL url = new URL(mParams.getEncodedUrl(params[0]));
                 connection = (HttpURLConnection)url.openConnection();
                 connection.connect();
                 if(connection.getResponseCode() == HttpURLConnection.HTTP_OK)
                 {
-                    breader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    String line="";
-                    while((line = breader.readLine())!=null)
-                    {
-                        sbuilder.append(line);
-                    }
+                    result= IOUtils.toString(connection.getInputStream(), "UTF8");
 
-                    result=sbuilder.toString();
                 }
 
 

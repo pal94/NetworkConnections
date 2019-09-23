@@ -27,5 +27,6 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'org.apache:apache:19'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
     //implementation fileTree(dir: 'C:\\Users\\Pallav Jhaveri\\Documents\\MAD\\commons-io-2.6-bin\\commons-io-2.6', include: ['*.aar', '*.jar'], exclude: [])
 }
